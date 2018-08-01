@@ -23,17 +23,17 @@ import com.opencsv.CSVWriter;
  */
 public class ExcelReader {
 
-    private final File file;
+    private static File file;
     DataFormatter formatter = new DataFormatter();
 
     public ExcelReader(File file) {
-        this.file = file;
+        ExcelReader.file = file;
     }
 
     public void getRowAsListFromExcel() {
         List<String[]> csvList = new ArrayList<>();
         FileInputStream fis;
-        Workbook workbook = null;
+        Workbook workbook;
         int maxDataCount = 0;
         try {
             String fileExtension = file.toString().substring(file.toString().indexOf("."));
@@ -46,70 +46,93 @@ public class ExcelReader {
                 case ".xls":
 //                    workbook = new HSSFWorkbook(new POIFSFileSystem(fis));
                     System.err.println("Wrong file type selected!");
-                    break;
+                    return;
                 default:
                     System.err.println("Wrong file type selected!");
-                    break;
+                    return;
             }
 
             //get number of worksheets in the workbook
-            int numberOfSheets = workbook.getNumberOfSheets();
+            int numberOfSheets = 1;
+            String[] dataRows = new String[8];
+            dataRows[0] = "dataelementUID";
+            dataRows[1] = "period";
+            dataRows[2] = "orgUnitUID";
+            dataRows[3] = "categoryOptionComboUID";
+            dataRows[4] = "ImplementingMechanismUID";
+            dataRows[5] = "dataValue";
+//                        System.out.println(cell);
+//            System.out.printf("%4s%16s%8s%17s%17s%17s%10s\n", "", dataRows[0], dataRows[1], dataRows[2], dataRows[3], dataRows[4], dataRows[5]);
+
+            csvList.add(dataRows);
 
             //iterating over each workbook sheet
             for (int i = 0; i < numberOfSheets; i++) {
                 Sheet sheet = workbook.getSheetAt(i);
+
+                int period = (int) sheet.getRow(1).getCell(3, Row.CREATE_NULL_AS_BLANK).getNumericCellValue();
+                String dataelementName = sheet.getRow(1).getCell(2, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
+
                 int numberOfRows = sheet.getLastRowNum();
 
-                for (int row = 4; row <= numberOfRows; row++) {
+                for (int row = 6; row <= numberOfRows; row++) {
                     Row currentRow = sheet.getRow(row);
                     int numberOfCells = currentRow.getLastCellNum();
-                    
-                    String facility = currentRow.getCell(0,Row.CREATE_NULL_AS_BLANK).getStringCellValue();
-//                     System.out.println(facility);
+
+                    String facility = currentRow.getCell(0, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
+//                    System.out.println(facility);
 //                    System.exit(0);
-                    int mflcode = (int) currentRow.getCell(1,Row.CREATE_NULL_AS_BLANK).getNumericCellValue();
-                   
-                    int period = (int) currentRow.getCell(2,Row.CREATE_NULL_AS_BLANK).getNumericCellValue();
-                    
-                    for (int cell = 3; cell <= numberOfCells; cell++) {
-                        String dataelementId = sheet.getRow(0).getCell(cell, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
-                        String dataelementname = sheet.getRow(1).getCell(cell,Row.CREATE_NULL_AS_BLANK).getStringCellValue();
-                        String categoryOptionCombo = sheet.getRow(2).getCell(cell, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
-                        String attributeOptionCombo = sheet.getRow(3).getCell(cell, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
-                        int dataValue = (int) currentRow.getCell(cell, Row.CREATE_NULL_AS_BLANK).getNumericCellValue();
-                        if(dataValue  == 0)
-                            continue;
-                        String[] dataRows = new String[8];
-                        dataRows[0] = String.valueOf(dataelementId);
-                        dataRows[1] = dataelementname;
-                        dataRows[2] = String.valueOf(period);
-                        dataRows[3] = facility;
-                        dataRows[4] = String.valueOf(mflcode);
-                        dataRows[5] = categoryOptionCombo;
-                        dataRows[6] = attributeOptionCombo;
-                        dataRows[7] = String.valueOf(dataValue);
-                        System.out.println(cell);
+
+                    String attributeOptionCombo = currentRow.getCell(3, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
+
+                    for (int cell = 5; cell < numberOfCells; cell++) {
+                        String dataelementUID = sheet.getRow(2).getCell(cell, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
+                        String categoryOptionCombo = sheet.getRow(3).getCell(cell, Row.CREATE_NULL_AS_BLANK).getStringCellValue();
+                        int dataValue = 0;
+                        try {
+                            dataValue = (int) currentRow.getCell(cell, Row.CREATE_NULL_AS_BLANK).getNumericCellValue();
+                        } catch (Exception e) {
+                        }
+//                        if (dataValue == 0) {
+//                            continue;
+//                        }
+                        dataRows = new String[8];
+                        dataRows[0] = String.valueOf(dataelementUID);
+                        dataRows[1] = String.valueOf(period);
+                        dataRows[2] = facility;
+                        dataRows[3] = categoryOptionCombo;
+                        dataRows[4] = attributeOptionCombo;
+                        dataRows[5] = String.valueOf(dataValue);
+//                        System.out.println(cell);
                         csvList.add(dataRows);
-//                        Pick from here after church  
-                        System.out.printf("%s\t%s\t%s\t%s\t%d\t%s\t%s\t%d\n", dataelementId,dataelementname,period,facility,mflcode,categoryOptionCombo,attributeOptionCombo,dataValue);
+//                        Pick from here after church
+                        System.out.printf("%4d%16s%8s%17s%17s%17s%10d\n", row, dataelementUID, period, facility, categoryOptionCombo, attributeOptionCombo, dataValue);
+
                     }
+//                    if (row == 6) {
+//                        System.out.println();
+//                        return;
+//                    }
                 }
             }
+
+            System.out.println("");
+
             workbook.close();
             writeRowToCSVFile(csvList);
         } catch (IOException | InvalidFormatException e) {
         }
     }
-    
+
     /*
 	 * Write the rows into the CSV file
-	 */
-	private static void writeRowToCSVFile(List<String[]> cleanRows) 
-		throws IOException {
-            File newFile = new File("/home/fegati/NetBeansProjects/Twiga/output/ucsf_c&t_oct-dec_results_data.csv");
+     */
+    private static void writeRowToCSVFile(List<String[]> cleanRows)
+            throws IOException {
+        File newFile = new File("/home/siech/Documents/open_heaven/intelliSOFT/3PM/3pm_V2/targets/" + file.getName().substring(0, file.getName().indexOf(".")) + ".csv");
         try (CSVWriter csvWriter = new CSVWriter(new FileWriter(newFile))) {
             csvWriter.writeAll(cleanRows);
         }
-}
+    }
 
 }

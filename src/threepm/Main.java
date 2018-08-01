@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package threepm;
 
 import java.io.File;
@@ -17,10 +12,14 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
-        File excelFile = new File("/home/fegati/Documents/consultancy/IntelliSoft/3pm/data/UCSF/ucsf_care_treatment_Oct-Dec17.xlsx");
-        ExcelReader er = new ExcelReader(excelFile);
-        er.getRowAsListFromExcel();
+        /*JFileChooser fileChooser = new JFileChooser();
+        int returnVal = fileChooser.showOpenDialog(null);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            new ExcelReader(
+                    fileChooser.getSelectedFile().getAbsoluteFile()).getRowAsListFromExcel();
+        }*/
+        new ExcelReader(new File("/home/siech/Documents/open_heaven/intelliSOFT/3PM/3pm_V2/targets/Tx_Curr_Targets.xlsx")).getRowAsListFromExcel();
+        new ExcelReader(new File("/home/siech/Documents/open_heaven/intelliSOFT/3PM/3pm_V2/targets/Tx_New_Targets.xlsx")).getRowAsListFromExcel();
     }
-    
+
 }
